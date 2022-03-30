@@ -1,0 +1,25 @@
+#+TITLE: Chouser Notes
+
+* 2022-03-27
+
+To start server:
+$ nix-shell -p mastodon -p yarn --run 'npm run start'
+
+...but browsing to localhost:3000 finds no open port, and localhost:3035 (mentioned in server startup logs) just returns "Cannot GET /"
+
+localhost:3035/index.html similarly fails
+
+Saw a warning, followed the instructions:
+$ npx browserslist@latest --update-db
+That failed, so followed instructions from log:
+$ npm install caniuse-lite
+...also failed.
+
+Getting lots of WARN messages from npm trying to write files in node_modules.
+Maybe this is a problem? But they are only WARN... So manually created one of the paths generating complaints, but didn't seem to fix much:
+$ mkdir -p node_modules/.staging/@babel/plugin-proposal-pipeline-operator-3e2760fa/test/fixtures/smart/await
+
+Changed a url in packages.json from `git://` to:
+`https://github.com/mishoo/UglifyJS2#harmony`
+... and now `npm install` seems a lot happier.
+Indeed, that fixed it! The start server command above now produces very different-looking output, and localhost:3000 works!
