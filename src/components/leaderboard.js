@@ -2,8 +2,15 @@ const firebase = require('firebase/app');
 const pr = require('profane-words');
 require('firebase/firestore');
 
+const LOCAL = true;
+
 const NUM_SCORES_DISPLAYED = 10;
 const ba = /(fuc)|(ass)|(nig)|(shit)|(retard)/gi;
+
+const localLeaderId = (scoreData) =>
+      ('localLeader_' + scoreData.challengeId
+          + '_' + scoreData.difficulty
+          + '_' + scoreData.gameMode)
 
 /**
  * High score with Firebase cloud store.
@@ -42,7 +49,7 @@ AFRAME.registerComponent('leaderboard', {
 
   update: function (oldData) {
     // Initialize Cloud Firestore through Firebase.
-    if (!firebase.apps.length && this.data.apiKey) {
+    if (!firebase.apps.length && this.data.apiKey && !LOCAL) {
       firebase.initializeApp({
         apiKey: this.data.apiKey,
         authDomain: this.data.authDomain,
@@ -94,7 +101,16 @@ AFRAME.registerComponent('leaderboard', {
 
     if (!pr.includes(this.username.toLowerCase()) &&
         !this.username.match(ba)) {
-      this.db.add(scoreData);
+      if(LOCAL) {
+        const id = localLeaderId(scoreData);
+        const scores = JSON.parse(localStorage.getItem(id) || '[]');
+        scores.push(scoreData);
+        scores.sort( (a, b) => b.score - a.score );
+        localStorage.setItem(id, JSON.stringify(scores.slice(0,10)));
+      }
+      else {
+        this.db.add(scoreData);
+      }
     }
 
     this.addEventDetail.scoreData = scoreData;
@@ -105,27 +121,43 @@ AFRAME.registerComponent('leaderboard', {
     if (this.data.gameMode === 'ride') { return; }
 
     const state = this.el.sceneEl.systems.state.state;
-    const query = this.db
-      .where('challengeId', '==', challengeId)
-      .where(
-        'difficulty', '==',
-        state.menuSelectedChallenge.id
-          ? state.menuSelectedChallenge.difficulty
-          : state.challenge.difficulty)
-      .where('gameMode', '==', this.data.gameMode)
-      .orderBy('score', 'desc')
-      .orderBy('time', 'asc')
-      .limit(10);
-    query.get().then(snapshot => {
+    const difficulty = (state.menuSelectedChallenge.id
+        ? state.menuSelectedChallenge.difficulty
+        : state.challenge.difficulty)
+
+    if(LOCAL) {
+      const id = localLeaderId({
+        challengeId: challengeId,
+        difficulty: difficulty,
+        gameMode: this.data.gameMode});
+      const scores = JSON.parse(localStorage.getItem(id) || '[]');
       this.eventDetail.challengeId = challengeId;
       this.scores.length = 0;
-      if (!snapshot.empty) {
-        snapshot.forEach(score => this.scores.push(score.data()));
+      if (!scores.empty) {
+        scores.forEach(score => this.scores.push(score));
       }
       this.el.sceneEl.emit('leaderboard', this.eventDetail, false);
-    }).catch(e => {
-      console.error('[firestore]', e);
-    });
+    }
+    else {
+      const query = this.db
+        .where('challengeId', '==', challengeId)
+        .where(
+          'difficulty', '==', difficulty)
+        .where('gameMode', '==', this.data.gameMode)
+        .orderBy('score', 'desc')
+        .orderBy('time', 'asc')
+        .limit(10);
+      query.get().then(snapshot => {
+        this.eventDetail.challengeId = challengeId;
+        this.scores.length = 0;
+        if (!snapshot.empty) {
+          snapshot.forEach(score => this.scores.push(score.data()));
+        }
+        this.el.sceneEl.emit('leaderboard', this.eventDetail, false);
+      }).catch(e => {
+        console.error('[firestore]', e);
+      });
+    }
   },
 
   /**
