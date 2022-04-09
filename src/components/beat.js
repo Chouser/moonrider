@@ -449,6 +449,21 @@ AFRAME.registerComponent('beat', {
     const explodeEventDetail = this.explodeEventDetail;
     const rig = this.rigContainer.object3D;
 
+    if(correctHit) {
+      // Haptics.
+      try{
+        weaponEl.components.haptics__beat.pulse();
+      } catch (err){
+        console.log(err);
+      }
+
+      // Sound.
+      this.el.parentNode.components['beat-hit-sound'].playSound(this.el, this.cutDirection);
+    }
+    else {
+      //document.getElementById('confirmSound').play();
+    }
+
     this.blockEl.object3D.visible = false;
 
     this.destroyed = true;
@@ -494,16 +509,6 @@ AFRAME.registerComponent('beat', {
 
   onHit: function (weaponEl, wrongHit) {
     const data = this.data;
-
-    // Haptics.
-    try{
-      weaponEl.components.haptics__beat.pulse();
-    } catch (err){
-      console.log(err);
-    }
-
-    // Sound.
-    this.el.parentNode.components['beat-hit-sound'].playSound(this.el, this.cutDirection);
 
     if (wrongHit) {
       this.wrongHit();
