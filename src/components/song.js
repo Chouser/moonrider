@@ -33,7 +33,8 @@ AFRAME.registerComponent('song', {
     isGameOver: {default: false},
     isLoading: {default: false},
     isPlaying: {default: false},
-    isVictory: {default: false}
+    isVictory: {default: false},
+    songDuration: {type: 'number'}  // seconds
   },
 
   init: function () {
@@ -49,6 +50,8 @@ AFRAME.registerComponent('song', {
     this.audioAnalyser.gainNode.gain.value = BASE_VOLUME;
 
     this.el.addEventListener('gamemenurestart', this.onRestart.bind(this));
+    this.el.addEventListener('gamemenusetskip', this.onSetSkip.bind(this));
+    this.el.addEventListener('gamemenuskip', this.onSkip.bind(this));
     this.el.addEventListener('wallhitstart', this.onWallHitStart.bind(this));
     this.el.addEventListener('wallhitend', this.onWallHitEnd.bind(this));
 
@@ -123,6 +126,8 @@ AFRAME.registerComponent('song', {
       this.audioAnalyser.resumeContext();
       this.isAudioPlaying = true;
     }
+
+    this.songDuration = data.songDuration;
   },
 
   processAudio: function () {
@@ -212,12 +217,37 @@ AFRAME.registerComponent('song', {
     gain.linearRampToValueAtTime(BASE_VOLUME, this.context.currentTime + 0.1);
   },
 
+  onSetSkip: function() {
+    this.skipTime = this.getCurrentTime();
+  },
+
+  onSkip: function() {
+    this.doSkip = true;
+    this.onRestart();
+  },
+
   startAudio: function () {
     const gain = this.audioAnalyser.gainNode.gain;
     gain.setValueAtTime(BASE_VOLUME, this.context.currentTime);
-    this.songStartTime = this.context.currentTime;
     this.source.onended = this.onSongComplete;
-    this.source.start(0, skipDebug || 0);
+    if(this.doSkip && this.skipTime) { // TODO: clear skipTime on new song
+      this.doSkip = false;
+
+      const supercurveFollow = document.querySelector('#curveFollowRig').components['supercurve-follow'];
+      const supercurve = supercurveFollow.supercurve;
+
+      // Add 1.1 seconds because ... that's what seems to work.
+      const calc = supercurve.songProgressToCurveProgress(
+        (this.skipTime + 1.1) / this.songDuration);
+
+      this.songStartTime = this.context.currentTime - this.skipTime;
+      this.source.start(0, this.skipTime );
+      supercurveFollow.curveProgress = calc;
+    }
+    else {
+      this.songStartTime = this.context.currentTime;
+      this.source.start(0, skipDebug || 0);
+    }
     this.isAudioPlaying = true;
   },
 

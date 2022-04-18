@@ -366,6 +366,22 @@ AFRAME.registerState({
       state.leaderboardQualified = false;
     },
 
+    gamemenusetskip: state => {
+      state.isPaused = false;
+      state.isVictory = false;
+      state.leaderboardQualified = false;
+    },
+
+    gamemenuskip: state => {
+      resetScore(state);
+      state.challenge.isBeatsPreloaded = false;
+      state.isGameOver = false;
+      state.isPaused = false;
+      state.isLoading = true;
+      state.isVictory = false;
+      state.leaderboardQualified = false;
+    },
+
     gamemenuexit: state => {
       resetScore(state);
       state.challenge.isBeatsPreloaded = false;

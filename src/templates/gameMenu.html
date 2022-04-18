@@ -32,7 +32,7 @@
     mixin="gameMenuButton"
     bind-toggle__raycastable="isPaused"
     bind__visible="isPaused"
-    position="0 0.35 0"
+    position="-0.55 0.35 0"
     proxy-event="event: click; to: a-scene; as: gamemenuresume">
     <a-entity mixin="gameMenuButtonText" text="value: RESUME"></a-entity>
   </a-entity>
@@ -41,9 +41,31 @@
     id="restartButton"
     mixin="gameMenuButton"
     bind__visible="!isVictory"
+    position="-0.55 0 0"
     bind-toggle__raycastable="isPaused || isGameOver"
     proxy-event="event: click; to: a-scene; as: gamemenurestart">
     <a-entity mixin="gameMenuButtonText" text="value: RESTART SONG"></a-entity>
+  </a-entity>
+
+  <a-entity
+    id="setSkipButton"
+    mixin="gameMenuButton"
+    bind-toggle__raycastable="isPaused && !isGameOver"
+    bind__visible="isPaused"
+    position="0.55 0.35 0"
+    proxy-event="event: click; to: a-scene; as: gamemenusetskip">
+    <a-entity mixin="gameMenuButtonText" text="value: SET SKIP HERE"></a-entity>
+  </a-entity>
+
+  <!-- TODO: disable skipButton if no skipTime is set -->
+  <a-entity
+    id="skipButton"
+    mixin="gameMenuButton"
+    bind__visible="isPaused"
+    position="0.55 0 0"
+    bind-toggle__raycastable="isPaused || isGameOver"
+    proxy-event="event: click; to: a-scene; as: gamemenuskip">
+    <a-entity mixin="gameMenuButtonText" text="value: SKIP BACK"></a-entity>
   </a-entity>
 
   <a-entity
